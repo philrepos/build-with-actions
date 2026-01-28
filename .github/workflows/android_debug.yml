@@ -12,11 +12,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Zip your source code (Main.lua must be at root)
+      # --- NEW STEP STARTS HERE ---
+      # This action deletes large pre-installed tools (Hasell, .NET, Docker)
+      # to free up about 10-12GB of space for the Android build.
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: false # Keep the Android SDKs, we might need them!
+          dotnet: true   # Delete .NET
+          haskell: true  # Delete Haskell
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+      # --- NEW STEP ENDS HERE ---
+
       - name: Zip Game
         run: zip -9 -r game.love . -x ".git/*" ".github/*"
 
-      # Switch to @v2 here
       - name: Build APK
         uses: love-actions/love-actions-android@v2
         with:
@@ -25,9 +38,7 @@ jobs:
           package: com.gamestudio.square
           version_code: 1
           version_string: "1.0"
-          love_version: "11.5" 
-          # v2 allows you to specify architecture if you want smaller builds,
-          # but for debug 'aarch64' (modern phones) or leaving it default works best.
+          love_version: "11.5"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
