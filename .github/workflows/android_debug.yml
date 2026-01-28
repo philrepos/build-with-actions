@@ -12,24 +12,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # --- NEW STEP STARTS HERE ---
-      # This action deletes large pre-installed tools (Hasell, .NET, Docker)
-      # to free up about 10-12GB of space for the Android build.
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@v1.3.1
-        with:
-          tool-cache: false
-          android: false # Keep the Android SDKs, we might need them!
-          dotnet: true   # Delete .NET
-          haskell: true  # Delete Haskell
-          large-packages: true
-          docker-images: true
-          swap-storage: false
-      # --- NEW STEP ENDS HERE ---
+      # 1. AGGRESSIVE CLEANUP
+      # We manually remove the largest folders. 
+      # This is faster and clears more space than the marketplace action.
+      - name: Maximize Build Space
+        run: |
+          echo "Freeing space..."
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force
+          echo "Space cleared."
+          df -h
 
       - name: Zip Game
         run: zip -9 -r game.love . -x ".git/*" ".github/*"
 
+      # 2. BUILD FOR AARCH64 ONLY
+      # We added "arch: aarch64" to stop it from building x86/emulator versions
       - name: Build APK
         uses: love-actions/love-actions-android@v2
         with:
@@ -38,7 +39,8 @@ jobs:
           package: com.gamestudio.square
           version_code: 1
           version_string: "1.0"
-          love_version: "11.5"
+          love_version: "11.5" 
+          arch: "aarch64" 
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
