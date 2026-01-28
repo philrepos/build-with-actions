@@ -1,0 +1,36 @@
+name: Build Android Debug
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Zip your source code (Main.lua must be at root)
+      - name: Zip Game
+        run: zip -9 -r game.love . -x ".git/*" ".github/*"
+
+      # Switch to @v2 here
+      - name: Build APK
+        uses: love-actions/love-actions-android@v2
+        with:
+          game: game.love
+          name: "Square Game"
+          package: com.gamestudio.square
+          version_code: 1
+          version_string: "1.0"
+          love_version: "11.5" 
+          # v2 allows you to specify architecture if you want smaller builds,
+          # but for debug 'aarch64' (modern phones) or leaving it default works best.
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-build
+          path: "**/*.apk"
